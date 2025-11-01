@@ -1,2 +1,2 @@
-# NJPUT_GPA_CACULATOR
-njupt gpa 计算器
+# NJPUT GPA计算器
+输入百分制学分进行计算
