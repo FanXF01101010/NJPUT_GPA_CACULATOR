@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPA 计算器（公式版）</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background-color: #f9f9f9;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .calculator {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .course-entry {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .course-entry:last-child {
+            margin-bottom: 0;
+        }
+
+        .result {
+            background: #e8f5e9;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .gpa-display {
+            font-size: 2.5rem;
+            color: #2e7d32;
+            font-weight: bold;
+        }
+
+        .btn {
+            background-color: #3498db;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+            margin-right: 0.5rem;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .grade-example {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .grade-example strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1> GPA 计算器（公式版）</h1>
+    <div class="calculator">
+        <div id="courseEntries" class="form-group"></div>
+
+        <div class="controls">
+            <button class="btn" onclick="addCourse()">添加课程</button>
+            <button class="btn" onclick="removeCourse()">删除课程</button>
+        </div>
+
+        <div class="form-group">
+            <button class="btn" onclick="calculateGpa()">计算 GPA</button>
+        </div>
+
+        <div id="result" class="result" style="display: none;">
+            <p>您的学期 GPA 为：</p>
+            <div id="gpa" class="gpa-display">0.00</div>
+        </div>
+
+        <div class="grade-example">
+            <p><strong>转换规则：</strong></p>
+            <ul>
+                <li>GPA = max( (分数 - 50) / 10 , 0 )</li>
+            </ul>
+            <p>示例：</p>
+            <ul>
+                <li>50 分 → 0.0</li>
+                <li>60 分 → 1.0</li>
+                <li>70 分 → 2.0</li>
+                <li>80 分 → 3.0</li>
+                <li>90 分 → 4.0</li>
+                <li>100 分 → 5.0</li>
+            </ul>
+            <p>请根据您的学校评分标准输入成绩。</p>
+        </div>
+    </div>
+
+    <script>
+        // 初始化默认 3 门课程
+        window.onload = function () {
+            const container = document.getElementById('courseEntries');
+            for (let i = 0; i < 3; i++) {
+                addCourse(container);
+            }
+        }
+
+        function addCourse(container = document.getElementById('courseEntries')) {
+            if (container.children.length >= 10) return;
+            const entry = document.createElement('div');
+            entry.className = 'course-entry';
+
+            // 学分选择框
+            const creditSelect = document.createElement('select');
+            creditSelect.innerHTML = `
+                <option value="">请选择学分</option>
+                ${Array.from({ length: 5 }, (_, i) => i + 1).map(num =>
+                    `<option value="${num}">${num}学分</option>`
+                ).join('')}
+            `;
+
+            // 百分制成绩输入框
+            const scoreInput = document.createElement('input');
+            scoreInput.type = 'number';
+            scoreInput.min = '0';
+            scoreInput.max = '100';
+            scoreInput.step = '1';
+            scoreInput.placeholder = '输入0-100之间的百分制成绩';
+
+            entry.appendChild(creditSelect);
+            entry.appendChild(scoreInput);
+            container.appendChild(entry);
+        }
+
+        function removeCourse() {
+            const container = document.getElementById('courseEntries');
+            if (container.children.length > 1) {
+                container.removeChild(container.lastElementChild);
+            }
+        }
+
+        function convertScoreToGPA(score) {
+            return Math.max((score - 50) / 10, 0);
+        }
+
+        function calculateGpa() {
+            const entries = document.querySelectorAll('.course-entry');
+            let totalCredits = 0;
+            let totalPoints = 0;
+            let valid = true;
+
+            entries.forEach(entry => {
+                const [creditSelect, scoreInput] = entry.children;
+
+                if (!creditSelect.value || !scoreInput.value) {
+                    valid = false;
+                    return;
+                }
+
+                const credit = parseFloat(creditSelect.value);
+                const score = parseFloat(scoreInput.value);
+
+                if (score < 0 || score > 100) {
+                    valid = false;
+                    alert('请输入有效的百分制成绩（0-100之间）');
+                    return;
+                }
+
+                const gpa = convertScoreToGPA(score);
+                totalCredits += credit;
+                totalPoints += credit * gpa;
+            });
+
+            if (!valid) {
+                alert('请填写所有课程的学分和成绩，并确保成绩在 0-100 之间');
+                return;
+            }
+
+            const gpa = totalCredits ? (totalPoints / totalCredits).toFixed(2) : 0.00;
+            document.getElementById('gpa').textContent = gpa;
+            document.getElementById('result').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
